@@ -28,7 +28,16 @@ get_scratch_dir <- function(){
   tmp_dir
 }
 
+
+#' clean the scratch dir
+#'
+#' deletes all files in the scratch dir
+#'
+#' @export
+#'
+#' @examples
 clean_scratch_dir <- function(){
   sdir <- get_scratch_dir()
   unlink(sdir,recursive = TRUE)
+  dir.create(sdir)
 }
