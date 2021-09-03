@@ -1,15 +1,33 @@
-
-#' Get the local scratch dir on biowulf
+#' Working with local scratch space
 #'
-#' @return a scratch dir
+#' @description These function work with the local scratch disk on the
+#' compute node of biowulf.  Ideally, when you use the sinteractive,
+#' sbatch, or swarm command, you remembered to use the
+#' `--gres=lscratch:XXX`
+#' option which allocates XXX GB of local scratch disk.  Another things to
+#' remember is to use
+#'
+#' ```
+#'  export TMPDIR=/lscratch/$SLURM_JOB_ID
+#' ```
+#'
+#' in your batch file or issue the commnand interactively.  If you do this,
+#' then tempfile() and tempdir() with create files appropriately.
+#'
+#' @details
+#' If you are using swarm, the swarm task id is affixed the to scratch directory to prevent
+#' the different processes from sharing a common scratch space.  Since you cannot control
+#' whether or not all the swarm tasks are run on the same node, even using /tmp or /lscratch/JOB_ID
+#' cannot guarentee that all the processes will have the same local scratch space.
+#'
 #' @export
+#' @rdname scratch
 #'
-#' @examples
 get_scratch_dir <- function(){
   if (nchar(Sys.getenv("SLURM_ARRAY_TASK_ID"))>0 ){
     # we are running as part of a swarm
     # the local scratch space is /lscratch/${SLURM_JOB_ID}...
-    # Create a subdirectory /lscratch/${SLURM_JOB_ID}/${SLURM_ARRAY_TAKS_ID}
+    # Create a subdirectory /lscratch/${SLURM_JOB_ID}/${SLURM_ARRAY_TASK_ID}
     # if we have two jobs running on the same node, we dont want them copying to the
     # same directory...
     # this directory may not exist, so I may have to create it
@@ -29,13 +47,8 @@ get_scratch_dir <- function(){
 }
 
 
-#' clean the scratch dir
-#'
-#' deletes all files in the scratch dir
-#'
+#' @rdname scratch
 #' @export
-#'
-#' @examples
 clean_scratch_dir <- function(){
   sdir <- get_scratch_dir()
   unlink(sdir,recursive = TRUE)
