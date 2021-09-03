@@ -85,8 +85,13 @@ stage_files <- function(fromDir,toDir,mangle=FALSE,pattern,f0=0,f1){
 #'
 concat_mangled_files <- function(fileDir,unmangled){
   handle_file <-function(x){
-    readr::read_csv(x,show_col_types=FALSE) %>% readr::write_csv(file = unmangled,append = file.exists(unmangled))
-    unlink(x)
+    tryCatch({
+      readr::read_csv(x,show_col_types=FALSE) %>% readr::write_csv(file = unmangled,append = file.exists(unmangled))
+      unlink(x)
+    },
+    error = function(ex){
+      warning("caught an exception: ",ex," file: ",x)
+    })
   }
 
   if (unmangled == basename(unmangled)) unmangled <- file.path(fileDir,unmangled)
