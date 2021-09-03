@@ -109,7 +109,7 @@ concat_mangled_files_future <- function(fileDir,unmangled){
     future::value(last_future)
     # excellent we are ready to continue
     next_future <- future::future({
-      readr::write_csv(data,unmangled,append = file.exists(unmangled))
+      readr::write_csv(data,unmangled,append = file.exists(unmangled),progress = FALSE)
       unlink(filename)
     })
   }
