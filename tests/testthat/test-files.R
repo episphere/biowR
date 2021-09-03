@@ -16,8 +16,6 @@ data_set_up <- function(){
   base_file <- file.path(stage,"mydata.csv")
   data = tibble::tibble(x=1:100,y=101:200,z=201:300,group=rep(letters[1:10],each=10)) %>%
     dplyr::group_by(group) %>% dplyr::group_map(~.x) %>%
-    #purrr::walk(~print(.x))
-    #purrr::walk(~print(mangle_filename(base_file)))
     purrr::walk(~readr::write_csv(.x,mangle_filename(base_file)))
   return( list(stage_dir = stage, base_file=base_file ))
 }
@@ -45,6 +43,23 @@ test_that("staging copies files...",{
 
 })
 
+test_that("staging works with a pattern",{
+  setup=stage_set_up()
+  stage_from = setup$from
+  stage_to = setup$to
+  ## clean up...
+  withr::defer(unlink(stage_from,recursive = TRUE))
+  withr::defer(unlink(stage_to,recursive = TRUE))
+
+  original_files <- dir(stage_from,full.names = FALSE)
+  ## add a few files that are not file fileXX.txt
+  1:10 %>% purrr::walk(~file.create(tempfile(pattern = "TEMP",tmpdir = stage_from,fileext = ".lala")))
+
+
+  stage_files(stage_from,stage_to,pattern = "^file")
+  staged_files <- dir(stage_to,full.names = FALSE)
+  expect_equal(staged_files,original_files)
+})
 test_that("staging copies a subset of files...",{
 
   setup=stage_set_up()
@@ -59,10 +74,6 @@ test_that("staging copies a subset of files...",{
   staged_files <- dir(stage_to,full.names = FALSE)
   expect_equal(staged_files,original_files)
 
-
-  ## clean up...
-  unlink(stage_from,recursive = TRUE)
-  unlink(stage_to,recursive = TRUE)
 })
 
 test_that("staging can mangle files...",{

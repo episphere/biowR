@@ -29,14 +29,16 @@ demangle_filename <- function(x){
   sub("_[0-9\\.]+(\\.[^\\.]*$)","\\1",x)
 }
 
-
+#'
 #' Stage files from one dir to another.
+#'
 #' On the biowulf system, the data disk is very slow for constant IO.  You
 #' will want to stage the data from the data disk to the local scratch disk.
 #'
 #' @param fromDir directory you are copying data from
 #' @param toDir  directory where the data is going to
 #' @param mangle should the filenames be mangled while staging the files?
+#' @param pattern (optional) pattern used to select files to stage see [list.files()]
 #' @param f0 (optional) the starting file index, if you only want to copy a
 #' subset of the file (e.g. from file 3 to file 7).  By default is 0.
 #' @param f1 (optional) the ending file index, if you only want to copy a
@@ -44,11 +46,18 @@ demangle_filename <- function(x){
 #'
 #' @export
 #'
-stage_files <- function(fromDir,toDir,mangle=FALSE,f0=0,f1){
+stage_files <- function(fromDir,toDir,mangle=FALSE,pattern,f0=0,f1){
   if (!dir.exists(fromDir)) stop("directory ",fromDir," does not exist")
   if (!dir.exists(toDir)) stop("directory ",toDir," does not exist")
+  if (!missing(pattern) && !missing(f1)){
+    stop("either pattern or f1 can be given")
+  }
 
-  fromFiles <- dir(fromDir,full.names = TRUE)
+  if (missing(pattern)){
+    fromFiles <- dir(fromDir,full.names = TRUE)
+  }else{
+    fromFiles <- dir(fromDir,pattern=pattern,full.names = TRUE)
+  }
   toFiles <- sub(fromDir,toDir,fromFiles)
 
   if (mangle){

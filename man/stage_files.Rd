@@ -2,11 +2,9 @@
 % Please edit documentation in R/filenames.R
 \name{stage_files}
 \alias{stage_files}
-\title{Stage files from one dir to another.
-On the biowulf system, the data disk is very slow for constant IO.  You
-will want to stage the data from the data disk to the local scratch disk.}
+\title{Stage files from one dir to another.}
 \usage{
-stage_files(fromDir, toDir, mangle = FALSE, f0 = 0, f1)
+stage_files(fromDir, toDir, mangle = FALSE, pattern, f0 = 0, f1)
 }
 \arguments{
 \item{fromDir}{directory you are copying data from}
@@ -15,6 +13,8 @@ stage_files(fromDir, toDir, mangle = FALSE, f0 = 0, f1)
 
 \item{mangle}{should the filenames be mangled while staging the files?}
 
+\item{pattern}{(optional) pattern used to select files to stage see \code{\link[=list.files]{list.files()}}}
+
 \item{f0}{(optional) the starting file index, if you only want to copy a
 subset of the file (e.g. from file 3 to file 7).  By default is 0.}
 
@@ -22,7 +22,6 @@ subset of the file (e.g. from file 3 to file 7).  By default is 0.}
 subset of the file.}
 }
 \description{
-Stage files from one dir to another.
 On the biowulf system, the data disk is very slow for constant IO.  You
 will want to stage the data from the data disk to the local scratch disk.
 }
