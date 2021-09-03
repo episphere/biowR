@@ -2,12 +2,9 @@
 % Please edit documentation in R/biowulf.R
 \name{get_scratch_dir}
 \alias{get_scratch_dir}
-\alias{clean_scratch_dir}
 \title{Working with local scratch space}
 \usage{
 get_scratch_dir()
-
-clean_scratch_dir()
 }
 \description{
 These function work with the local scratch disk on the
@@ -25,5 +22,10 @@ then tempfile() and tempdir() with create files appropriately.
 If you are using swarm, the swarm task id is affixed the to scratch directory to prevent
 the different processes from sharing a common scratch space.  Since you cannot control
 whether or not all the swarm tasks are run on the same node, even using /tmp or /lscratch/JOB_ID
-cannot guarentee that all the processes will have the same local scratch space.
+cannot guarantee that all the processes will have the same local scratch space.
+}
+\note{
+I removed the clear_scratch_space function.  You cannot delete the /tmp or /lscratch/JOB_ID files.
+It may do more harm than good.  Clean the space yourself.  Maybe work in a directory under the
+scratch directory.
 }

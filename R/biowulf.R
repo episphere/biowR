@@ -18,7 +18,12 @@
 #' If you are using swarm, the swarm task id is affixed the to scratch directory to prevent
 #' the different processes from sharing a common scratch space.  Since you cannot control
 #' whether or not all the swarm tasks are run on the same node, even using /tmp or /lscratch/JOB_ID
-#' cannot guarentee that all the processes will have the same local scratch space.
+#' cannot guarantee that all the processes will have the same local scratch space.
+#'
+#' @note
+#' I removed the clear_scratch_space function.  You cannot delete the /tmp or /lscratch/JOB_ID files.
+#' It may do more harm than good.  Clean the space yourself.  Maybe work in a directory under the
+#' scratch directory.
 #'
 #' @export
 #' @rdname scratch
@@ -46,11 +51,3 @@ get_scratch_dir <- function(){
   tmp_dir
 }
 
-
-#' @rdname scratch
-#' @export
-clean_scratch_dir <- function(){
-  sdir <- get_scratch_dir()
-  unlink(sdir,recursive = TRUE)
-  dir.create(sdir)
-}
