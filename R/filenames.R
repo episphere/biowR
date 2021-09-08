@@ -49,9 +49,9 @@ demangle_filename <- function(x){
 stage_files <- function(fromDir,toDir,mangle=FALSE,pattern,f0=0,f1){
   if (!dir.exists(fromDir)) stop("directory ",fromDir," does not exist")
   if (!dir.exists(toDir)) stop("directory ",toDir," does not exist")
-  if (!missing(pattern) && !missing(f1)){
-    stop("either pattern or f1 can be given")
-  }
+#  if (!missing(pattern) && !missing(f1)){
+#    stop("either pattern or f1 can be given")
+#  }
 
   if (missing(pattern)){
     fromFiles <- dir(fromDir,full.names = TRUE)
