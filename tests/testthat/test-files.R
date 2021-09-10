@@ -102,9 +102,9 @@ test_that("staging copies a list of files...",{
 
   # expect a warning...
   original_files <- dir(stage_from,full.names = FALSE)
-  expect_warning( stage_filelist(stage_from,stage_to,filelist = c(original_files,"bobo.jpg"),f0 = 1, f1=3) )
+  expect_warning( stage_filelist(stage_from,stage_to,filelist = c("bobo.jpg",original_files),f0 = 1, f1=3) )
   staged_files <- dir(stage_to,full.names = FALSE)
-  expect_equal(staged_files,original_files[1:3])
+  expect_equal(staged_files,original_files[1:2])
 
 })
 

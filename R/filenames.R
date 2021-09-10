@@ -88,7 +88,8 @@ stage_filelist<-function(fromDir,toDir,filelist,f0=1,f1=length(filelist)){
   if (!dir.exists(toDir)) stop("directory ",toDir," does not exist")
 
   allfiles <- dir(fromDir)
-  filelist<-basename(filelist)
+  filelist<-basename(filelist)[f0:f1]
+
   ## make sure all the files exist...
   not_in_fromdir = setdiff(filelist,allfiles)
   filelist <- intersect(filelist,allfiles)
@@ -100,7 +101,7 @@ stage_filelist<-function(fromDir,toDir,filelist,f0=1,f1=length(filelist)){
   fromFiles <- file.path(fromDir,filelist)
   toFiles <- file.path(toDir,filelist)
 
-  file.copy(fromFiles[f0:f1],toFiles[f0:f1])
+  file.copy(fromFiles,toFiles)
 }
 
 
