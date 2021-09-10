@@ -71,6 +71,27 @@ stage_files <- function(fromDir,toDir,mangle=FALSE,pattern,f0=0,f1){
   }
 }
 
+stage_filelist<-function(fromDir,toDir,filelist,f0=0,f1=length(filelist)){
+  if (!dir.exists(fromDir)) stop("directory ",fromDir," does not exist")
+  if (!dir.exists(toDir)) stop("directory ",toDir," does not exist")
+
+  allfiles <- dir(fromDir)
+  filelist<-basename(filelist)
+  ## make sure all the files exist...
+  not_in_fromdir = setdiff(filelist,allfiles)
+  filelist <- intersect(filelist,allfiles)
+  if (length(not_in_fromdir)>0){
+    warning("some of the file where not in the input directory: ",not_in_fromdir)
+  }
+  rm(not_in_fromdir)
+
+  fromFiles <- file.path(fromDir,filelist)
+  toFiles <- file.path(toDir,filelist)
+
+  file.copy(fromFiles[f0:f1],toFiles[f0:f1])
+}
+
+
 
 #' Concatenates files that would have the name if they were not mangled
 #'

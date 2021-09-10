@@ -60,7 +60,7 @@ test_that("staging works with a pattern",{
   staged_files <- dir(stage_to,full.names = FALSE)
   expect_equal(staged_files,original_files)
 })
-test_that("staging copies a subset of files...",{
+test_that("staging copies a subset of files....",{
 
   setup=stage_set_up()
   stage_from = setup$from
@@ -69,12 +69,45 @@ test_that("staging copies a subset of files...",{
   withr::defer(unlink(stage_from,recursive = TRUE))
   withr::defer(unlink(stage_to,recursive = TRUE))
 
-  original_files <- dir(stage_from,full.names = FALSE)[3:7]
+  original_files <- dir(stage_from,full.names = FALSE)
   stage_files(stage_from,stage_to,f0=3,f1=7)
+  staged_files <- dir(stage_to,full.names = FALSE)
+  expect_equal(staged_files,original_files[3:7])
+
+})
+
+test_that("staging copies a list of files...",{
+
+  setup=stage_set_up()
+  stage_from = setup$from
+  stage_to = setup$to
+  ## clean up...
+  withr::defer(unlink(stage_from,recursive = TRUE))
+  withr::defer(unlink(stage_to,recursive = TRUE))
+
+  original_files <- dir(stage_from,full.names = FALSE)
+  stage_filelist(stage_from,stage_to,filelist = original_files,f0 = 1, f1=3)
+  staged_files <- dir(stage_to,full.names = FALSE)
+  expect_equal(staged_files,original_files[1:3])
+
+  unlink(stage_to,recursive = TRUE)
+  dir.create(stage_to)
+
+  stage_filelist(stage_from,stage_to,filelist = original_files)
   staged_files <- dir(stage_to,full.names = FALSE)
   expect_equal(staged_files,original_files)
 
+  unlink(stage_to,recursive = TRUE)
+  dir.create(stage_to)
+
+  # expect a warning...
+  original_files <- dir(stage_from,full.names = FALSE)
+  expect_warning( stage_filelist(stage_from,stage_to,filelist = c(original_files,"bobo.jpg"),f0 = 1, f1=3) )
+  staged_files <- dir(stage_to,full.names = FALSE)
+  expect_equal(staged_files,original_files[1:3])
+
 })
+
 
 test_that("staging can mangle files...",{
   setup=stage_set_up()
