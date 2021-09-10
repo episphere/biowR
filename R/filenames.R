@@ -71,7 +71,19 @@ stage_files <- function(fromDir,toDir,mangle=FALSE,pattern,f0=0,f1){
   }
 }
 
-stage_filelist<-function(fromDir,toDir,filelist,f0=0,f1=length(filelist)){
+#' Stage files from a list of files
+#'
+#' Given a vector of filenames in the directory fromDir, stage the files into toDir.
+#'
+#' @param fromDir  the directory where all the files are located, all files must be in the same directory.
+#' @param toDir    where the files are copied.
+#' @param filelist The list of files
+#' @param f0       The index of the first file in the list to be copied (default = 1)
+#' @param f1       The index of the last file in the list to be copied (default = length(filelist))
+#'
+#' @export
+#'
+stage_filelist<-function(fromDir,toDir,filelist,f0=1,f1=length(filelist)){
   if (!dir.exists(fromDir)) stop("directory ",fromDir," does not exist")
   if (!dir.exists(toDir)) stop("directory ",toDir," does not exist")
 
