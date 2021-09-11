@@ -43,10 +43,11 @@ demangle_filename <- function(x){
 #' subset of the file (e.g. from file 3 to file 7).  By default is 0.
 #' @param f1 (optional) the ending file index, if you only want to copy a
 #' subset of the file.
+#' @param ...      parameters passed to file.copy
 #'
 #' @export
 #'
-stage_files <- function(fromDir,toDir,mangle=FALSE,pattern,f0=0,f1){
+stage_files <- function(fromDir,toDir,mangle=FALSE,pattern,f0=0,f1,...){
   if (!dir.exists(fromDir)) stop("directory ",fromDir," does not exist")
   if (!dir.exists(toDir)) stop("directory ",toDir," does not exist")
 #  if (!missing(pattern) && !missing(f1)){
@@ -65,9 +66,9 @@ stage_files <- function(fromDir,toDir,mangle=FALSE,pattern,f0=0,f1){
   }
 
   if (missing(f1)){
-    file.copy(fromFiles,toFiles)
+    file.copy(fromFiles,toFiles,...)
   }else{
-    file.copy(fromFiles[f0:f1],toFiles[f0:f1])
+    file.copy(fromFiles[f0:f1],toFiles[f0:f1],...)
   }
 }
 
@@ -80,10 +81,11 @@ stage_files <- function(fromDir,toDir,mangle=FALSE,pattern,f0=0,f1){
 #' @param filelist The list of files
 #' @param f0       The index of the first file in the list to be copied (default = 1)
 #' @param f1       The index of the last file in the list to be copied (default = length(filelist))
+#' @param ...      parameters passed to file.copy
 #'
 #' @export
 #'
-stage_filelist<-function(fromDir,toDir,filelist,f0=1,f1=length(filelist)){
+stage_filelist<-function(fromDir,toDir,filelist,f0=1,f1=length(filelist),...){
   if (!dir.exists(fromDir)) stop("directory ",fromDir," does not exist")
   if (!dir.exists(toDir)) stop("directory ",toDir," does not exist")
 
@@ -101,7 +103,7 @@ stage_filelist<-function(fromDir,toDir,filelist,f0=1,f1=length(filelist)){
   fromFiles <- file.path(fromDir,filelist)
   toFiles <- file.path(toDir,filelist)
 
-  file.copy(fromFiles,toFiles)
+  file.copy(fromFiles,toFiles,...)
 }
 
 

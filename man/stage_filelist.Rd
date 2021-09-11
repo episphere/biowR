@@ -4,7 +4,7 @@
 \alias{stage_filelist}
 \title{Stage files from a list of files}
 \usage{
-stage_filelist(fromDir, toDir, filelist, f0 = 1, f1 = length(filelist))
+stage_filelist(fromDir, toDir, filelist, f0 = 1, f1 = length(filelist), ...)
 }
 \arguments{
 \item{fromDir}{the directory where all the files are located, all files must be in the same directory.}
@@ -16,6 +16,8 @@ stage_filelist(fromDir, toDir, filelist, f0 = 1, f1 = length(filelist))
 \item{f0}{The index of the first file in the list to be copied (default = 1)}
 
 \item{f1}{The index of the last file in the list to be copied (default = length(filelist))}
+
+\item{...}{parameters passed to file.copy}
 }
 \description{
 Given a vector of filenames in the directory fromDir, stage the files into toDir.

@@ -4,7 +4,7 @@
 \alias{stage_files}
 \title{Stage files from one dir to another.}
 \usage{
-stage_files(fromDir, toDir, mangle = FALSE, pattern, f0 = 0, f1)
+stage_files(fromDir, toDir, mangle = FALSE, pattern, f0 = 0, f1, ...)
 }
 \arguments{
 \item{fromDir}{directory you are copying data from}
@@ -20,6 +20,8 @@ subset of the file (e.g. from file 3 to file 7).  By default is 0.}
 
 \item{f1}{(optional) the ending file index, if you only want to copy a
 subset of the file.}
+
+\item{...}{parameters passed to file.copy}
 }
 \description{
 On the biowulf system, the data disk is very slow for constant IO.  You
