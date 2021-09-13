@@ -6,13 +6,11 @@ Authors@R:
              family = "Russ",
              role = c("aut", "cre"),
              email = "daniel.russ@nih.gov",
-             comment = c(ORCID = "0000-0003-4040-4416")),
-      person(given = "National Cancer Institute",
-             role = "cph"))
+             comment = c(ORCID = "0000-0003-4040-4416")))
 Description: A set of functions that I use that make it easier to use the Biowulf cluster
     at NIH.  These functions may make or may not your life easier using a different
     cluster.
-License: MIT + file LICENSE
+License: file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
