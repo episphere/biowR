@@ -18,6 +18,8 @@ RoxygenNote: 7.1.2
 Imports: 
     dplyr,
     future,
+    GGIR,
+    jsonlite,
     magrittr,
     purrr,
     readr,

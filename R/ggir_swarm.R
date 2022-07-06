@@ -49,7 +49,7 @@ run_stage_one<-function(cwa_root,results_root,json_args,f0,f1){
 
   part1_args=list()
   if (!missingArg(json_args) && file.exists(json_args)){
-    part1_args = fromJSON(json_args)
+    part1_args = jsonlite::fromJSON(json_args)
   }
   ## overwrite several options to avoid disaster...
   part1_args$mode=1
