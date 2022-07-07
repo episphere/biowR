@@ -73,3 +73,88 @@ run_stage_one<-function(cwa_root,results_root,json_args,f0,f1){
   }
   file.copy( dir(stage_out,full.names = T),results_root,recursive = T)
 }
+
+clean_user_dir <- function(){
+  if (dir.exists(tools::R_user_dir("biowR"))){
+    files_to_delete <- dir(tools::R_user_dir("biowR"),full.names = TRUE)
+    print(files_to_delete)
+    unlink(files_to_delete)
+  }
+}
+
+write_stage1_swarmfile <- function(scriptDir,cwa_root,results_root,json_args="",f0,f1,ncore,ht=FALSE){
+    rscript <- write_stage1_R_script(scriptDir)
+    swarmfile <- file.path(scriptDir,paste0("ggir_",f0,"_",f1,"_",ncore,".swarm"))
+
+    ### calculate the number of per processor...
+  njob=f1-f0-1
+  if(ht){
+    message("using hyperthreading ... ")
+    ncore=2*ncore
+  }
+  nj<-rep(0,ncore)
+  nj[1:(njob%%ncore)]<-1
+  nj<-nj+rep(njob %/% ncore)
+
+  breaks <- c(0,cumsum(nj))+f0
+  start_job= breaks[1:ncore]
+  end_job=breaks[2:length(breaks)]
+
+  l <- paste0("Rscript ",rscript," ",cwa_root," ",results_root," ",start_job," ",end_job)
+  if (file.exists(json_args)){
+    l <- paste0(l," -json ",json_args)
+  }
+
+  writeLines(l,swarmfile)
+
+  ## assume it takes 90 mins/job
+  est=lubridate::as.period(lubridate::minutes(90*max(nj)),unit = "days")
+  time_estimate=sprintf('%02d-%02d:%02d:%02d', lubridate::day(est), lubridate::hour(est), lubridate::minute(est), lubridate::second(est))
+  job_name=paste0("ggir_swarm_",f0,"_",f1,"_",ncore)
+  message("created files:\n\t ",rscript,"\n\t",swarmfile)
+  message("Issue the following command:")
+  if(ht){
+    message('swarm -f ',swarmfile,' -g 16 --merge-output --logdir=',scriptDir,' --module R  --job-name ',job_name,'  --time ',time_estimate,' --gres=lscratch:500')
+  } else{
+    message('swarm -f ',swarmfile,' -p 2 -g 16 --merge-output --logdir=',scriptDir,' --module R  --job-name ',job_name,'  --time ',time_estimate,' --gres=lscratch:500')
+  }
+}
+
+
+write_stage1_R_script <- function(scriptDir=tools::R_user_dir("biowR")){
+  if (!dir.exists(scriptDir)){
+    dir.create(scriptDir,recursive = TRUE)
+  }
+  rscript=file.path(scriptDir,'run_ggir_stage_1.R')
+  if (!file.exists(rscript)){
+    writeLines(
+'
+#!/usr/bin/env Rscript
+library("argparse")
+library("biowR")
+
+
+main<-function(args){
+  if (!is.null(args$json) && !file.exists(args$json)) stop("Can not json parameter read file: ",args$json)
+  if ( is.null(args$json) ){
+    with(args,run_stage_one(cwa_root,results_root,f0 = f0,f1=f1))
+  } else{
+    with(args,run_stage_one(cwa_root,results_root,json_args = json,f0 = f0,f1=f1))
+  }
+}
+
+parser <- ArgumentParser()
+parser$add_argument("cwa_root",help="directory containing the CWA files")
+parser$add_argument("results_root",help="location of GGIR results")
+parser$add_argument("-json",help="path to json file containing parameters")
+parser$add_argument("f0",type="integer",help="index of first file")
+parser$add_argument("f1",type="integer",help="index of last file")
+
+args<-parser$parse_args()
+main(args)
+',rscript)
+  }
+
+invisible(rscript)
+}
+

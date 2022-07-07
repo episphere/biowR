@@ -1,6 +1,6 @@
 Package: biowR
 Title: Helper functions for Biowulf Cluster
-Version: 0.0.0.1
+Version: 0.0.0.2
 Authors@R: 
     c(person(given = "Daniel",
              family = "Russ",
@@ -20,6 +20,7 @@ Imports:
     future,
     GGIR,
     jsonlite,
+    lubridate,
     magrittr,
     purrr,
     readr,
