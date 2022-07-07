@@ -74,6 +74,14 @@ run_stage_one<-function(cwa_root,results_root,json_args,f0,f1){
   file.copy( dir(stage_out,full.names = T),results_root,recursive = T)
 }
 
+#' Empty the biowR cache
+#'
+#' removes files from the tools::R_user_dir("biowR") directory
+#'
+#' @return nothing returned
+#' @export
+#' @seealso [tools::R_user_dir()]
+#'
 clean_user_dir <- function(){
   if (dir.exists(tools::R_user_dir("biowR"))){
     files_to_delete <- dir(tools::R_user_dir("biowR"),full.names = TRUE)
@@ -82,6 +90,28 @@ clean_user_dir <- function(){
   }
 }
 
+#' Prepares the swarmfile/script file for Stage 1 of the GGIR analysis
+#'
+#' Pay close attention to the parameters passed in. Currently, the code assumes that
+#' each job takes 90 minutes to run.  This is to ensure that enough time is allocate to
+#' run the job.
+#'
+#' Because CRAN policy does not allow the scripts to be placed in the user's home directory without
+#' permission, the default location of the scripts is in tools::R_user_dir("biowR"), which on biowulf
+#' is ~/share/R/biowR.  I would suggest setting the scriptDir argument to something useful like "~".
+#'
+#' @param scriptDir The directory where the scripts are written.
+#' @param cwa_root  The directory where the accelerometer files are stored.
+#' @param results_root  The root for the results directory.
+#' @param json_args An optional json file with parameters for GGIR
+#' @param f0 The start index
+#' @param f1 The end index.  The file with index f1 is NOT run.
+#' @param ncore The number of jobs you would like to swarm at once.
+#' @param ht If you want to use hyperthreading, set ht to TRUE.
+#'
+#' @return invisibly returens the name of the swarmfile
+#' @export
+#'
 write_stage1_swarmfile <- function(scriptDir,cwa_root,results_root,json_args="",f0,f1,ncore,ht=FALSE){
     rscript <- write_stage1_R_script(scriptDir)
     swarmfile <- file.path(scriptDir,paste0("ggir_",f0,"_",f1,"_",ncore,".swarm"))
@@ -118,9 +148,19 @@ write_stage1_swarmfile <- function(scriptDir,cwa_root,results_root,json_args="",
   } else{
     message('swarm -f ',swarmfile,' -p 2 -g 16 --merge-output --logdir=',scriptDir,' --module R  --job-name ',job_name,'  --time ',time_estimate,' --gres=lscratch:500')
   }
+
+  invisible(swarmfile)
 }
 
 
+#' Write the R script for stage1 of GGIR
+#'
+#'This is called from write_stage1_swarmfile
+#'
+#' @param scriptDir the directory where the R script is written
+#' @seealso [write_stage1_swarmfile()]
+#' @return the name of the script file (invisiblly)
+#'
 write_stage1_R_script <- function(scriptDir=tools::R_user_dir("biowR")){
   if (!dir.exists(scriptDir)){
     dir.create(scriptDir,recursive = TRUE)
