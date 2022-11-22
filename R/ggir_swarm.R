@@ -57,6 +57,7 @@ run_stage_one<-function(cwa_root,results_root,json_args,f0,f1){
   part1_args$outputdir=stage_out
   part1_args$f0=1
   part1_args$f1=length(dir(stage_cwa))
+  part1_args$do.parallel=FALSE
 
   if( getOption("test1_verbose",FALSE) ){
     print(unlist(part1_args))
