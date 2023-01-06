@@ -1,19 +1,30 @@
-#' Run Stage 1 of GGIR on the NIH biowulf.
+#' Run GGIR on the NIH biowulf.
+#' @name run GGIR
 #'
+#' @description
 #' On the NIH biowulf, reading files directly from the /data disk is EXTREMELY slow.  So
 #' we stage the data, files [f0..f1)  on local disk and run all the local files.
 #'
 #' The goal is to make a pipeline that is swarmable.  Nothing is returned by
 #' this function, however, files are written in the results root.
 #'
-#' The output of this should would with the input of run_stage_2_5.
+#' The output of run_stage_one should would with the input of run_stage_2_5.
 #'
+#' @details
+#' The **output** directory used in parts 2-5 is different from the results root
+#' from part 1.  The output directory is inside the results root and has a directory
+#' path of ***RESULTS_ROOT/output_&lt;studyname&gt;***
+#'
+#' @param part1_output_dir the **output** directory from running part 1 of the GGIR
 #' @param cwa_root where the CWA files are stored.
 #' @param results_root where to write the results
-#' @param json_args a json file containing a list of arguments passed into ggir stage 1
+#' @param json_args a json file containing a list of arguments passed into ggir
 #' @param f0 the starting index of the files in cwa_root
 #' @param f1 the ending index of the files in cwa_root
 #'
+#'
+#' @rdname runggir
+#' @order 1
 #' @export
 #'
 run_stage_one<-function(cwa_root,results_root,json_args,f0,f1){
@@ -108,9 +119,9 @@ clean_user_dir <- function(){
 #' @param f0 The start index
 #' @param f1 The end index.  The file with index f1 is NOT run.
 #' @param ncore The number of jobs you would like to swarm at once.
-#' @param ht If you want to use hyperthreading, set ht to TRUE.
+#' @param ht If you want to use hyper threading, set ht to TRUE.
 #'
-#' @return invisibly returens the name of the swarmfile
+#' @return invisibly returns the name of the swarmfile
 #' @export
 #'
 write_stage1_swarmfile <- function(scriptDir,cwa_root,results_root,json_args="",f0,f1,ncore,ht=FALSE){
@@ -154,13 +165,16 @@ write_stage1_swarmfile <- function(scriptDir,cwa_root,results_root,json_args="",
 }
 
 
-#' Write the R script for stage1 of GGIR
+#' Write the R script for running GGIR
+#' @name write_R_script
 #'
-#'This is called from write_stage1_swarmfile
+#' @description
+#' This is called from write_stage1_swarmfile or write_stage2_5_swarmfile
 #'
+#' @rdname write_swarmfile
 #' @param scriptDir the directory where the R script is written
-#' @seealso [write_stage1_swarmfile()]
-#' @return the name of the script file (invisiblly)
+#' @seealso [write_stage1_swarmfile()] [write_stage2_5_swarmfile()]
+#' @return the name of the script file (invisibly)
 #'
 write_stage1_R_script <- function(scriptDir=tools::R_user_dir("biowR")){
   if (!dir.exists(scriptDir)){
@@ -199,3 +213,43 @@ main(args)
 invisible(rscript)
 }
 
+
+
+#' @rdname write_swarmfile
+#'
+write_stage2_5_R_script <- function(scriptDir=tools::R_user_dir("biowR")){
+  if (!dir.exists(scriptDir)){
+    dir.create(scriptDir,recursive = TRUE)
+  }
+  rscript=file.path(scriptDir,'run_ggir_stage_1.R')
+  if (!file.exists(rscript)){
+    writeLines(
+      '
+#!/usr/bin/env Rscript
+library("argparse")
+library("biowR")
+
+
+main<-function(args){
+  if (!is.null(args$json) && !file.exists(args$json)) stop("Can not json parameter read file: ",args$json)
+  if ( is.null(args$json) ){
+    with(args,run_stage_one(cwa_root,results_root,f0 = f0,f1=f1))
+  } else{
+    with(args,run_stage_one(cwa_root,results_root,json_args = json,f0 = f0,f1=f1))
+  }
+}
+
+parser <- ArgumentParser()
+parser$add_argument("cwa_root",help="directory containing the CWA files")
+parser$add_argument("results_root",help="location of GGIR results")
+parser$add_argument("-json",help="path to json file containing parameters")
+parser$add_argument("f0",type="integer",help="index of first file")
+parser$add_argument("f1",type="integer",help="index of last file")
+
+args<-parser$parse_args()
+main(args)
+',rscript)
+  }
+
+invisible(rscript)
+}

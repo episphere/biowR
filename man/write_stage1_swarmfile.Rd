@@ -30,10 +30,10 @@ write_stage1_swarmfile(
 
 \item{ncore}{The number of jobs you would like to swarm at once.}
 
-\item{ht}{If you want to use hyperthreading, set ht to TRUE.}
+\item{ht}{If you want to use hyper threading, set ht to TRUE.}
 }
 \value{
-invisibly returens the name of the swarmfile
+invisibly returns the name of the swarmfile
 }
 \description{
 Pay close attention to the parameters passed in. Currently, the code assumes that

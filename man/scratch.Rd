@@ -12,8 +12,10 @@ compute node of biowulf.  Ideally, when you use the sinteractive,
 sbatch, or swarm command, you remembered to use the
 \code{--gres=lscratch:XXX}
 option which allocates XXX GB of local scratch disk.  Another things to
-remember is to use\preformatted{ export TMPDIR=/lscratch/$SLURM_JOB_ID
-}
+remember is to use
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{ export TMPDIR=/lscratch/$SLURM_JOB_ID
+}\if{html}{\out{</div>}}
 
 in your batch file or issue the commnand interactively.  If you do this,
 then tempfile() and tempdir() with create files appropriately.
