@@ -3,12 +3,12 @@
 \name{run GGIR}
 \alias{run GGIR}
 \alias{run_stage_one}
-\alias{run_parts_2_5}
+\alias{run_stages_2_5}
 \title{Run GGIR on the NIH biowulf.}
 \usage{
 run_stage_one(cwa_root, results_root, json_args, f0, f1)
 
-run_parts_2_5(part1_output_dir, json_args = "", f0, f1)
+run_stages_2_5(part1_output_dir, json_args = "", f0, f1)
 }
 \arguments{
 \item{cwa_root}{where the CWA files are stored.}

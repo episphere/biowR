@@ -29,7 +29,7 @@
 #'
 run_stage_one<-function(cwa_root,results_root,json_args,f0,f1){
   ## handle missing f0/f1...
-  if (missingArg(f0) || missingArg(f1)){
+  if (methods::missingArg(f0) || methods::missingArg(f1)){
     stop('f0 and f1 need to be defined in run_stage_one')
   }
 
@@ -59,7 +59,7 @@ run_stage_one<-function(cwa_root,results_root,json_args,f0,f1){
   }
 
   part1_args=list()
-  if (!missingArg(json_args) && file.exists(json_args)){
+  if (!methods::missingArg(json_args) && file.exists(json_args)){
     part1_args = jsonlite::fromJSON(json_args)
   }
   ## overwrite several options to avoid disaster...
@@ -164,6 +164,73 @@ write_stage1_swarmfile <- function(scriptDir,cwa_root,results_root,json_args="",
   invisible(swarmfile)
 }
 
+write_stage2_5_swarmfile <- function(script_dir,output_dir,arguments_path,f0,f1,n_core,ht=FALSE){
+
+  # output_dir must exist and have a meta/basic directory...
+  if (!fs::dir_exists(fs::path(output_dir,"meta","basic")) ) stop("the output_dir does not contain a meta/basic directory")
+  if ( length(fs::dir_ls(fs::path(output_dir,"meta","basic"))) == 0 ) stop("No part 1 results in the output_dir/meta/basic directory")
+
+  # write the r script that the swarm will run
+  rscript <- write_stage2_5_R_script(script_dir)
+
+  ## make sure the arguments are absolute paths...
+  if (!fs::is_absolute_path(script_dir))     script_dir <- fs::path_home(script_dir)
+  if (!fs::is_absolute_path(output_dir))     output_dir <- fs::path_home(output_dir)
+  if (!fs::is_absolute_path(arguments_path)) arguments_path <- fs::path_home(arguments_path)
+
+  ## calculate the number of jobs each core will run...
+  n_jobs = f1 - f0 + 1
+
+  ## turn off hyper threading if you have more cores than jobs
+  ht = dplyr::if_else(n_core>n_jobs,FALSE,ht)
+  ## if you have less jobs than cores, only use njob cores...
+  n_core = min(n_core,n_jobs)
+
+  ## the number of hyperthreads you will be using...
+  n_cpu = dplyr::if_else(ht,2*n_core,n_core)
+
+  ## calculate the number of jobs run on each hyperthread
+  numJobsOnCpu<-rep(0,n_cpu)
+  numJobsOnCpu[1:n_cpu<=(n_jobs%%n_cpu)]<-1
+  numJobsOnCpu<-numJobsOnCpu+rep(n_jobs %/% n_cpu)
+  numJobsOnCpu <- numJobsOnCpu[numJobsOnCpu>0]
+
+  ## calculate the start/end index for each hyperthread
+  startingIndexOnCpu <- f0+cumsum(numJobsOnCpu)-numJobsOnCpu
+  lastIndexOnCpu <- f0+cumsum(numJobsOnCpu)-1
+
+  ## write the swarm file..
+  swarmfile <- file.path(script_dir,paste0("ggir_p25_",f0,"_",f1,"_",n_core,".swarm"))
+  cat(paste0("Rscript ",rscript," ",output_dir," ",arguments_path," ",startingIndexOnCpu," ",lastIndexOnCpu),
+      sep="\n",
+      file = swarmfile)
+
+
+  ## estimate time to run
+  est <- lubridate::as.period(lubridate::minutes(90 * max(numJobsOnCpu)),
+                              unit = "days")
+  time_estimate <- sprintf("%02d-%02d:%02d:%02d", lubridate::day(est),
+                           lubridate::hour(est), lubridate::minute(est), lubridate::second(est))
+  job_name = paste0("ggir_swarm_", f0, "_", f1, "_", n_core)
+  message("created files:\n\t", rscript, "\n\t", swarmfile)
+  message("\nIssue the following command:")
+  if (ht) {
+    message("swarm -f ", swarmfile, " -g 16 --merge-output --logdir=",
+            script_dir, " --module R  --job-name ", job_name,
+            "  --time ", time_estimate, " --gres=lscratch:500")
+  }
+  else {
+    message("swarm -f ", swarmfile, " -p 2 -g 16 --merge-output --logdir=",
+            script_dir, " --module R  --job-name ", job_name,
+            "  --time ", time_estimate, " --gres=lscratch:500")
+  }
+
+  invisible(swarmfile)
+}
+
+
+
+
 
 #' Write the R script for running GGIR
 #' @name write_R_script
@@ -173,7 +240,7 @@ write_stage1_swarmfile <- function(scriptDir,cwa_root,results_root,json_args="",
 #'
 #' @rdname write_swarmfile
 #' @param scriptDir the directory where the R script is written
-#' @seealso [write_stage1_swarmfile()] [write_stage2_5_swarmfile()]
+#' @seealso [write_stage1_swarmfile]
 #' @return the name of the script file (invisibly)
 #'
 write_stage1_R_script <- function(scriptDir=tools::R_user_dir("biowR")){
@@ -216,38 +283,46 @@ invisible(rscript)
 
 
 #' @rdname write_swarmfile
+#' @export
 #'
 write_stage2_5_R_script <- function(scriptDir=tools::R_user_dir("biowR")){
   if (!dir.exists(scriptDir)){
     dir.create(scriptDir,recursive = TRUE)
   }
-  rscript=file.path(scriptDir,'run_ggir_stage_1.R')
+  rscript=file.path(scriptDir,'run_ggir_stage_2_5.R')
   if (!file.exists(rscript)){
     writeLines(
       '
-#!/usr/bin/env Rscript
-library("argparse")
-library("biowR")
+library(argparser)
+library(biowR)
 
+validate_arguments <- function(args){
+  print(args)
+  if (!args$force && !grepl("output_[[:alnum:]]+$",args$output_dir) ) stop("output_dir is not not output_<studyname>")
+  if (!fs::file_exists(args$output_dir)) stop("output_dir does not exist",args$output_dir)
 
-main<-function(args){
-  if (!is.null(args$json) && !file.exists(args$json)) stop("Can not json parameter read file: ",args$json)
-  if ( is.null(args$json) ){
-    with(args,run_stage_one(cwa_root,results_root,f0 = f0,f1=f1))
-  } else{
-    with(args,run_stage_one(cwa_root,results_root,json_args = json,f0 = f0,f1=f1))
-  }
+  if (!fs::file_exists(args$params_file)) stop("params_file does not exist")
+
+  if (args$f0<1) stop("f0 must be >=1")
+  if (args$f1<args$f0) stop("f1 must be >= f1")
 }
 
-parser <- ArgumentParser()
-parser$add_argument("cwa_root",help="directory containing the CWA files")
-parser$add_argument("results_root",help="location of GGIR results")
-parser$add_argument("-json",help="path to json file containing parameters")
-parser$add_argument("f0",type="integer",help="index of first file")
-parser$add_argument("f1",type="integer",help="index of last file")
+ggir_parts2_5 <- function(args){
+  with(args,run_stages_2_5(part1_output_dir = output_dir,json_args = params_file,f0 = f0, f1=f1 ))
+}
 
-args<-parser$parse_args()
-main(args)
+
+parser <- arg_parser("Run GGIR parts 2 through 5")
+parser <- add_argument(parser,"output_dir",
+                       help="directory containing the results of Part 1, should be output_<studyname>")
+parser <- add_argument(parser,"params_file",help="path to json file containing parameters")
+parser <- add_argument(parser,"f0",help="index of starting file",type="integer")
+parser <- add_argument(parser,"f1",help="index of last file (inclusive)",type="integer")
+parser <- add_argument(parser,"--force",help = "trust that the output_dir is correct",flag = TRUE)
+
+args <- parse_args(parser)
+validate_arguments(args)
+ggir_parts2_5(args)
 ',rscript)
   }
 

@@ -140,26 +140,26 @@ concat_mangled_files <- function(fileDir,unmangled){
 }
 
 ## runs slower than without futures???
-concat_mangled_files_future <- function(fileDir,unmangled){
-
-  future::plan(future::multisession)
-  handle_file <- function(last_future,filename){
-    data <- readr::read_csv(filename,show_col_types=FALSE)
-    # because the last_future may not be resolved,
-    # block until it is complete..
-    future::value(last_future)
-    # excellent we are ready to continue
-    next_future <- future::future({
-      readr::write_csv(data,unmangled,append = file.exists(unmangled),progress = FALSE)
-      unlink(filename)
-    })
-  }
-
-  if (unmangled == basename(unmangled)) unmangled <- file.path(fileDir,unmangled)
-
-  files <- dir(fileDir,full.names = TRUE)
-  files %>%
-    purrr::discard(~.x == unmangled) %>%
-    purrr::keep(~demangle_filename(.x) == unmangled) %>%
-    purrr::reduce(handle_file,.init=future::future(TRUE)) %>% future::value(.)
-}
+# concat_mangled_files_future <- function(fileDir,unmangled){
+#
+#   future::plan(future::multisession)
+#   handle_file <- function(last_future,filename){
+#     data <- readr::read_csv(filename,show_col_types=FALSE)
+#     # because the last_future may not be resolved,
+#     # block until it is complete..
+#     future::value(last_future)
+#     # excellent we are ready to continue
+#     next_future <- future::future({
+#       readr::write_csv(data,unmangled,append = file.exists(unmangled),progress = FALSE)
+#       unlink(filename)
+#     })
+#   }
+#
+#   if (unmangled == basename(unmangled)) unmangled <- file.path(fileDir,unmangled)
+#
+#   files <- dir(fileDir,full.names = TRUE)
+#   files %>%
+#     purrr::discard(~.x == unmangled) %>%
+#     purrr::keep(~demangle_filename(.x) == unmangled) %>%
+#     purrr::reduce(handle_file,.init=future::future(TRUE)) %>% future::value(.)
+# }

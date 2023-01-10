@@ -51,7 +51,8 @@ stage_part1_results <- function(output_dir,f0,f1){
 
 #' @rdname runggir
 #' @order 2
-run_parts_2_5 <- function(part1_output_dir,json_args="",f0,f1){
+#' @export
+run_stages_2_5 <- function(part1_output_dir,json_args="",f0,f1){
   stopifnot(startsWith(basename(part1_output_dir),prefix = "output_"))
 
   # stage the results from part1
@@ -107,7 +108,7 @@ run_parts_2_5 <- function(part1_output_dir,json_args="",f0,f1){
 #'| relative path of the files | basename of the file. | relative name of the files' directory | Was the file mangled? | Did the file copies ok? |
 #'
 #' @export
-#'
+#' @importFrom rlang .data
 unstage_all<-function(stage_output,results_output){
   fc<-function(file,mangle=FALSE){
     from=file.path(stage_output,file)
@@ -117,12 +118,12 @@ unstage_all<-function(stage_output,results_output){
     file.copy(from = from,to=to)
   }
 
-  fileInfo <- tibble(
+  fileInfo <- tibble::tibble(
     file=setdiff(dir(stage_output,include.dirs = F,recursive = T),dir(results_output,include.dirs = F,recursive = T)),
     name=basename(file),
     relpath=dirname(file),
-    mangle=!grepl("^\\.|meta|file summary report",relpath)
+    mangle=!grepl("^\\.|meta|file summary report",.data$relpath)
   )
 
-  fileInfo %>% mutate(ok=map2_lgl(file,mangle,fc))
+  fileInfo %>% dplyr::mutate(ok=purrr::map2_lgl(.data$file,.data$mangle,fc))
 }

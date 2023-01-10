@@ -1,6 +1,6 @@
 Package: biowR
 Title: Helper functions for Biowulf Cluster
-Version: 0.0.0.2
+Version: 0.0.0.3
 Authors@R: 
     c(person(given = "Daniel",
              family = "Russ",
@@ -17,11 +17,13 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.1
 Imports: 
     dplyr,
-    future,
     GGIR,
     jsonlite,
     lubridate,
     magrittr,
     purrr,
     readr,
-    tibble
+    tibble,
+    fs,
+    methods,
+    rlang

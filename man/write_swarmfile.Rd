@@ -20,5 +20,5 @@ the name of the script file (invisibly)
 This is called from write_stage1_swarmfile or write_stage2_5_swarmfile
 }
 \seealso{
-\code{\link[=write_stage1_swarmfile]{write_stage1_swarmfile()}} \code{\link[=write_stage2_5_swarmfile]{write_stage2_5_swarmfile()}}
+\link{write_stage1_swarmfile}
 }
