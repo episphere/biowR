@@ -107,6 +107,12 @@ clean_user_dir <- function(){
 #' n_cpu (integer)
 #' returns a list containing a vector of integers startIndex of jobs
 #'  and a list of the endIndex of a job.  This is INCLUSIVE.
+#'
+#' @param f0 - first index run
+#' @param f1 - last index run
+#' @param n_core - number of cores requested
+#' @param ht - true/false use hyperthreading?
+
 getStartAndEndJobs <- function(f0,f1,n_core,ht){
   ## calculate the number of jobs each core will run...
   n_jobs = f1 - f0 + 1
@@ -140,26 +146,28 @@ getStartAndEndJobs <- function(f0,f1,n_core,ht){
 #'
 #' Because CRAN policy does not allow the scripts to be placed in the user's home directory without
 #' permission, the default location of the scripts is in tools::R_user_dir("biowR","cache"), which on biowulf
-#' is ~/.cache/R/biowR.  I would suggest setting the scriptDir argument to something useful.
+#' is ~/.cache/R/biowR.  I would suggest setting the script_dir argument to something useful.
 #'
-#' @param scriptDir The directory where the scripts are written.
+#' @param script_dir The directory where the scripts are written.
 #' @param cwa_root  The directory where the accelerometer files are stored.
 #' @param results_root  The root for the results directory.
 #' @param json_args An optional json file with parameters for GGIR
 #' @param f0 The start index
 #' @param f1 The end index.  The file with index f1 is run.
-#' @param ncore The number of jobs you would like to swarm at once.
+#' @param n_core The number of jobs you would like to swarm at once.
 #' @param ht If you want to use hyper threading, set ht to TRUE.
+#' @param output_dir The output_&lt;study$gt; directory in the result_root
+#' directory from stage 1
 #'
 #' @return invisibly returns the name of the swarmfile
 #' @export
 #' @rdname write_swarmfile
 #'
-write_stage1_swarmfile <- function(scriptDir=tools::R_user_dir("biowR","cache"),cwa_root,results_root,
+write_stage1_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache"),cwa_root,results_root,
                                    json_args="",f0,f1,n_core,ht=FALSE){
-  print(scriptDir)
-  rscript <- write_stage1_R_script(scriptDir)
-  swarmfile <- file.path(scriptDir,paste0("ggir_p_",f0,"_",f1,"_",n_core,".swarm"))
+  print(script_dir)
+  rscript <- write_stage1_R_script(script_dir)
+  swarmfile <- file.path(script_dir,paste0("ggir_p_",f0,"_",f1,"_",n_core,".swarm"))
 
   indices <- getStartAndEndJobs(f0,f1,n_core,ht)
 
@@ -175,9 +183,9 @@ write_stage1_swarmfile <- function(scriptDir=tools::R_user_dir("biowR","cache"),
   message("created files:\n\t ",rscript,"\n\t",swarmfile)
   message("Issue the following command:")
   if(ht){
-    message('swarm -f ',swarmfile,' -p 2 -g 16 --merge-output --logdir=',scriptDir,' --module R  --job-name ',job_name,'  --time ',time_estimate,' --gres=lscratch:500')
+    message('swarm -f ',swarmfile,' -p 2 -g 16 --merge-output --logdir=',script_dir,' --module R  --job-name ',job_name,'  --time ',time_estimate,' --gres=lscratch:500')
   } else{
-    message('swarm -f ',swarmfile,' -g 16 --merge-output --logdir=',scriptDir,' --module R  --job-name ',job_name,'  --time ',time_estimate,' --gres=lscratch:500')
+    message('swarm -f ',swarmfile,' -g 16 --merge-output --logdir=',script_dir,' --module R  --job-name ',job_name,'  --time ',time_estimate,' --gres=lscratch:500')
   }
 
   invisible(swarmfile)
@@ -185,7 +193,7 @@ write_stage1_swarmfile <- function(scriptDir=tools::R_user_dir("biowR","cache"),
 
 #' @export
 #' @rdname write_swarmfile
-write_stage2_5_swarmfile <- function(script_dir,output_dir,arguments_path,f0,f1,n_core,ht=FALSE){
+write_stage2_5_swarmfile <- function(script_dir,output_dir,json_args,f0,f1,n_core,ht=FALSE){
 
   # output_dir must exist and have a meta/basic directory...
   if (!fs::dir_exists(fs::path(output_dir,"meta","basic")) ) stop("the output_dir does not contain a meta/basic directory")
@@ -197,35 +205,20 @@ write_stage2_5_swarmfile <- function(script_dir,output_dir,arguments_path,f0,f1,
   ## make sure the arguments are absolute paths...
   if (!fs::is_absolute_path(script_dir))     script_dir <- fs::path_home(script_dir)
   if (!fs::is_absolute_path(output_dir))     output_dir <- fs::path_home(output_dir)
-  if (!fs::is_absolute_path(arguments_path)) arguments_path <- fs::path_home(arguments_path)
+  if (!fs::is_absolute_path(json_args)) arguments_path <- fs::path_wd(json_args)
 
-  ## calculate the number of jobs each core will run...
-  n_jobs = f1 - f0 + 1
+  ## calculate the number of jobs, first/last index on each hyperthread
+  indices <- getStartAndEndJobs(f0,f1,n_core,ht)
 
-  ## turn off hyper threading if you have more cores than jobs
-  ht = dplyr::if_else(n_core>n_jobs,FALSE,ht)
-  ## if you have less jobs than cores, only use njob cores...
-  n_core = min(n_core,n_jobs)
-
-  ## the number of hyperthreads you will be using...
-  n_cpu = dplyr::if_else(ht,2*n_core,n_core)
-
-  ## calculate the number of jobs run on each hyperthread
-  numJobsOnCpu <- jobsPerProcessor(n_jobs = n_jobs,n_cpu = n_cpu)
-
-  ## calculate the start/end index for each hyperthread
-  startingIndexOnCpu <- f0+cumsum(numJobsOnCpu)-numJobsOnCpu
-  lastIndexOnCpu <- f0+cumsum(numJobsOnCpu)-1
-
-  ## write the swarm file..
-  swarmfile <- file.path(script_dir,paste0("ggir_p25_",f0,"_",f1,"_",n_core,".swarm"))
-  cat(paste0("Rscript ",rscript," ",output_dir," ",arguments_path," ",startingIndexOnCpu," ",lastIndexOnCpu),
+  ## write the swarm file (note: n_core may no longer be correct)..
+  swarmfile <- file.path(script_dir,paste0("ggir_p25_",f0,"_",f1,"_",length(indices$start),".swarm"))
+  cat(paste0("Rscript ",rscript," ",output_dir," ",arguments_path," ",indices$start," ",indices$last),
       sep="\n",
       file = swarmfile)
 
 
   ## estimate time to run
-  est <- lubridate::as.period(lubridate::minutes(90 * max(numJobsOnCpu)),
+  est <- lubridate::as.period(lubridate::minutes(90 * max(indices$num_jobs)),
                               unit = "days")
   time_estimate <- sprintf("%02d-%02d:%02d:%02d", lubridate::day(est),
                            lubridate::hour(est), lubridate::minute(est), lubridate::second(est))
@@ -257,15 +250,15 @@ write_stage2_5_swarmfile <- function(script_dir,output_dir,arguments_path,f0,f1,
 #' This is called from write_stage1_swarmfile or write_stage2_5_swarmfile
 #'
 #' @rdname write_swarmfile
-#' @param scriptDir the directory where the R script is written
+#' @param script_dir the directory where the R script is written
 #' @seealso [write_stage1_swarmfile]
 #' @return the name of the script file (invisibly)
 #'
-write_stage1_R_script <- function(scriptDir=tools::R_user_dir("biowR","cache")){
-  if (!dir.exists(scriptDir)){
-    dir.create(scriptDir,recursive = TRUE)
+write_stage1_R_script <- function(script_dir=tools::R_user_dir("biowR","cache")){
+  if (!dir.exists(script_dir)){
+    dir.create(script_dir,recursive = TRUE)
   }
-  rscript=file.path(scriptDir,'run_ggir_stage_1.R')
+  rscript=file.path(script_dir,'run_ggir_stage_1.R')
   if (!file.exists(rscript)){
     writeLines(
       '
@@ -303,11 +296,11 @@ invisible(rscript)
 #' @rdname write_swarmfile
 #' @export
 #'
-write_stage2_5_R_script <- function(scriptDir=tools::R_user_dir("biowR","cache")){
-  if (!dir.exists(scriptDir)){
-    dir.create(scriptDir,recursive = TRUE)
+write_stage2_5_R_script <- function(script_dir=tools::R_user_dir("biowR","cache")){
+  if (!dir.exists(script_dir)){
+    dir.create(script_dir,recursive = TRUE)
   }
-  rscript=file.path(scriptDir,'run_ggir_stage_2_5.R')
+  rscript=file.path(script_dir,'run_ggir_stage_2_5.R')
   if (!file.exists(rscript)){
     writeLines(
       '

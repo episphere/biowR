@@ -10,7 +10,7 @@ clean_user_dir()
 nothing returned
 }
 \description{
-removes files from the tools::R_user_dir("biowR") directory
+removes files from the tools::R_user_dir("biowR","cache") directory
 }
 \seealso{
 \code{\link[tools:userdir]{tools::R_user_dir()}}

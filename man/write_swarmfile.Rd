@@ -9,32 +9,32 @@
 \title{Prepares the swarmfile/script file for Stage 1 of the GGIR analysis}
 \usage{
 write_stage1_swarmfile(
-  scriptDir = tools::R_user_dir("biowR", "cache"),
+  script_dir = tools::R_user_dir("biowR", "cache"),
   cwa_root,
   results_root,
   json_args = "",
-  f0,
-  f1,
-  ncore,
-  ht = FALSE
-)
-
-write_stage2_5_swarmfile(
-  script_dir,
-  output_dir,
-  arguments_path,
   f0,
   f1,
   n_core,
   ht = FALSE
 )
 
-write_stage1_R_script(scriptDir = tools::R_user_dir("biowR", "cache"))
+write_stage2_5_swarmfile(
+  script_dir,
+  output_dir,
+  json_args,
+  f0,
+  f1,
+  n_core,
+  ht = FALSE
+)
 
-write_stage2_5_R_script(scriptDir = tools::R_user_dir("biowR"))
+write_stage1_R_script(script_dir = tools::R_user_dir("biowR", "cache"))
+
+write_stage2_5_R_script(script_dir = tools::R_user_dir("biowR", "cache"))
 }
 \arguments{
-\item{scriptDir}{the directory where the R script is written}
+\item{script_dir}{the directory where the R script is written}
 
 \item{cwa_root}{The directory where the accelerometer files are stored.}
 
@@ -44,11 +44,14 @@ write_stage2_5_R_script(scriptDir = tools::R_user_dir("biowR"))
 
 \item{f0}{The start index}
 
-\item{f1}{The end index.  The file with index f1 is NOT run.}
+\item{f1}{The end index.  The file with index f1 is run.}
 
-\item{ncore}{The number of jobs you would like to swarm at once.}
+\item{n_core}{The number of jobs you would like to swarm at once.}
 
 \item{ht}{If you want to use hyper threading, set ht to TRUE.}
+
+\item{output_dir}{The output_<study$gt; directory in the result_root
+directory from stage 1}
 }
 \value{
 invisibly returns the name of the swarmfile
@@ -64,8 +67,8 @@ This is called from write_stage1_swarmfile or write_stage2_5_swarmfile
 }
 \details{
 Because CRAN policy does not allow the scripts to be placed in the user's home directory without
-permission, the default location of the scripts is in tools::R_user_dir("biowR"), which on biowulf
-is ~/share/R/biowR.  I would suggest setting the scriptDir argument to something useful like "~".
+permission, the default location of the scripts is in tools::R_user_dir("biowR","cache"), which on biowulf
+is ~/.cache/R/biowR.  I would suggest setting the script_dir argument to something useful.
 }
 \seealso{
 \link{write_stage1_swarmfile}
