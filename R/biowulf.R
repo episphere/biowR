@@ -25,29 +25,16 @@
 #' It may do more harm than good.  Clean the space yourself.  Maybe work in a directory under the
 #' scratch directory.
 #'
+#' I use to worry about setting the scratch dir to a directory in /lscratch/JOB_ID/PROC_ID. I would
+#' add the swarm array task id to the directory name.
+#' since every instance of R has a unique tempdir, I dont need to work about this.
+#' for simplicity just use the tempdir and scratch.  The new scratch directory is
+#' /lscratch/JOB_ID/RtmpXXXX/scratch.  Each instance is unique.
+#'
 #' @export
 #' @rdname scratch
 #'
 get_scratch_dir <- function(){
-  if (nchar(Sys.getenv("SLURM_ARRAY_TASK_ID"))>0 ){
-    # we are running as part of a swarm
-    # the local scratch space is /lscratch/${SLURM_JOB_ID}...
-    # Create a subdirectory /lscratch/${SLURM_JOB_ID}/${SLURM_ARRAY_TASK_ID}
-    # if we have two jobs running on the same node, we dont want them copying to the
-    # same directory...
-    # this directory may not exist, so I may have to create it
-    tmp_dir = paste0("/lscratch/",Sys.getenv("SLURM_JOB_ID"),"/",Sys.getenv("SLURM_ARRAY_TASK_ID"))
-    if (!dir.exists(tmp_dir)) dir.create(tmp_dir)
-  } else if (nchar(Sys.getenv("SLURM_JOB_ID"))>0 ) {
-    # we are not part of a swarm but on a biowulf node ...
-    # This directory will exist as long has you used
-    #   --gres=lscratch:XXX with sbatch/slurm/sinteractive
-    #     XXX = number of megabytes allocated
-    tmp_dir = paste0("/lscratch/",Sys.getenv("SLURM_JOB_ID"))
-  } else{
-    ## not sure where I am...
-    tmp_dir = tempdir()
-  }
-  tmp_dir
+  fs::dir_create(tempdir(),"scratch")
 }
 
