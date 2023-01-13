@@ -88,18 +88,48 @@ run_stage_one<-function(cwa_root,results_root,json_args,f0,f1){
 
 #' Empty the biowR cache
 #'
-#' removes files from the tools::R_user_dir("biowR") directory
+#' removes files from the tools::R_user_dir("biowR","cache") directory
 #'
 #' @return nothing returned
 #' @export
 #' @seealso [tools::R_user_dir()]
 #'
 clean_user_dir <- function(){
-  if (dir.exists(tools::R_user_dir("biowR"))){
-    files_to_delete <- dir(tools::R_user_dir("biowR"),full.names = TRUE)
+  if (dir.exists(tools::R_user_dir("biowR","cache"))){
+    files_to_delete <- dir(tools::R_user_dir("biowR","cache"),full.names = TRUE)
     print(files_to_delete)
     unlink(files_to_delete)
   }
+}
+
+#' calculates the number of files to run on a hyperthread
+#' n_jobs (integer)
+#' n_cpu (integer)
+#' returns a list containing a vector of integers startIndex of jobs
+#'  and a list of the endIndex of a job.  This is INCLUSIVE.
+getStartAndEndJobs <- function(f0,f1,n_core,ht){
+  ## calculate the number of jobs each core will run...
+  n_jobs = f1 - f0 + 1
+
+  ## turn off hyper threading if you have more cores than jobs
+  ht = dplyr::if_else(n_core>n_jobs,FALSE,ht)
+  ## if you have less jobs than cores, only use njob cores...
+  n_core = min(n_core,n_jobs)
+
+  ## the number of hyperthreads you will be using...
+  n_cpu = dplyr::if_else(ht,2*n_core,n_core)
+
+  ## calculate the number of jobs run on each hyperthread
+  numJobsOnCpu<-rep(0,n_cpu)
+  numJobsOnCpu[1:n_cpu<=(n_jobs%%n_cpu)]<-1
+  numJobsOnCpu<-numJobsOnCpu+rep(n_jobs %/% n_cpu)
+  numJobsOnCpu <- numJobsOnCpu[numJobsOnCpu>0]
+
+  ## calculate the start/end index for each hyperthread
+  startingIndexOnCpu <- f0+cumsum(numJobsOnCpu)-numJobsOnCpu
+  lastIndexOnCpu <- f0+cumsum(numJobsOnCpu)-1
+
+  return(list(start=startingIndexOnCpu,last=lastIndexOnCpu,num_jobs=numJobsOnCpu))
 }
 
 #' Prepares the swarmfile/script file for Stage 1 of the GGIR analysis
@@ -109,61 +139,52 @@ clean_user_dir <- function(){
 #' run the job.
 #'
 #' Because CRAN policy does not allow the scripts to be placed in the user's home directory without
-#' permission, the default location of the scripts is in tools::R_user_dir("biowR"), which on biowulf
-#' is ~/share/R/biowR.  I would suggest setting the scriptDir argument to something useful like "~".
+#' permission, the default location of the scripts is in tools::R_user_dir("biowR","cache"), which on biowulf
+#' is ~/.cache/R/biowR.  I would suggest setting the scriptDir argument to something useful.
 #'
 #' @param scriptDir The directory where the scripts are written.
 #' @param cwa_root  The directory where the accelerometer files are stored.
 #' @param results_root  The root for the results directory.
 #' @param json_args An optional json file with parameters for GGIR
 #' @param f0 The start index
-#' @param f1 The end index.  The file with index f1 is NOT run.
+#' @param f1 The end index.  The file with index f1 is run.
 #' @param ncore The number of jobs you would like to swarm at once.
 #' @param ht If you want to use hyper threading, set ht to TRUE.
 #'
 #' @return invisibly returns the name of the swarmfile
 #' @export
+#' @rdname write_swarmfile
 #'
-write_stage1_swarmfile <- function(scriptDir,cwa_root,results_root,json_args="",f0,f1,ncore,ht=FALSE){
-    rscript <- write_stage1_R_script(scriptDir)
-    swarmfile <- file.path(scriptDir,paste0("ggir_",f0,"_",f1,"_",ncore,".swarm"))
+write_stage1_swarmfile <- function(scriptDir=tools::R_user_dir("biowR","cache"),cwa_root,results_root,
+                                   json_args="",f0,f1,n_core,ht=FALSE){
+  print(scriptDir)
+  rscript <- write_stage1_R_script(scriptDir)
+  swarmfile <- file.path(scriptDir,paste0("ggir_p_",f0,"_",f1,"_",n_core,".swarm"))
 
-    ### calculate the number of per processor...
-  njob=f1-f0-1
-  if(ht){
-    message("using hyperthreading ... ")
-    ncore=2*ncore
-  }
-  nj<-rep(0,ncore)
-  nj[1:(njob%%ncore)]<-1
-  nj<-nj+rep(njob %/% ncore)
+  indices <- getStartAndEndJobs(f0,f1,n_core,ht)
 
-  breaks <- c(0,cumsum(nj))+f0
-  start_job= breaks[1:ncore]
-  end_job=breaks[2:length(breaks)]
-
-  l <- paste0("Rscript ",rscript," ",cwa_root," ",results_root," ",start_job," ",end_job)
-  if (file.exists(json_args)){
-    l <- paste0(l," -json ",json_args)
-  }
-
-  writeLines(l,swarmfile)
+  cat(paste0("Rscript ",rscript," ",cwa_root," ",results_root," ",indices$start," ",indices$last, " -json ",json_args),
+      sep="\n",
+      file = swarmfile)
 
   ## assume it takes 90 mins/job
-  est=lubridate::as.period(lubridate::minutes(90*max(nj)),unit = "days")
-  time_estimate=sprintf('%02d-%02d:%02d:%02d', lubridate::day(est), lubridate::hour(est), lubridate::minute(est), lubridate::second(est))
-  job_name=paste0("ggir_swarm_",f0,"_",f1,"_",ncore)
+  est=lubridate::as.period(lubridate::minutes(90*max(indices$num_jobs)),unit = "days")
+  time_estimate=sprintf('%02d-%02d:%02d:%02d', lubridate::day(est), lubridate::hour(est),
+                        lubridate::minute(est), lubridate::second(est))
+  job_name=paste0("ggir_p1_swarm_",f0,"_",f1,"_",length(indices$num_jobs))
   message("created files:\n\t ",rscript,"\n\t",swarmfile)
   message("Issue the following command:")
   if(ht){
-    message('swarm -f ',swarmfile,' -g 16 --merge-output --logdir=',scriptDir,' --module R  --job-name ',job_name,'  --time ',time_estimate,' --gres=lscratch:500')
-  } else{
     message('swarm -f ',swarmfile,' -p 2 -g 16 --merge-output --logdir=',scriptDir,' --module R  --job-name ',job_name,'  --time ',time_estimate,' --gres=lscratch:500')
+  } else{
+    message('swarm -f ',swarmfile,' -g 16 --merge-output --logdir=',scriptDir,' --module R  --job-name ',job_name,'  --time ',time_estimate,' --gres=lscratch:500')
   }
 
   invisible(swarmfile)
 }
 
+#' @export
+#' @rdname write_swarmfile
 write_stage2_5_swarmfile <- function(script_dir,output_dir,arguments_path,f0,f1,n_core,ht=FALSE){
 
   # output_dir must exist and have a meta/basic directory...
@@ -190,10 +211,7 @@ write_stage2_5_swarmfile <- function(script_dir,output_dir,arguments_path,f0,f1,
   n_cpu = dplyr::if_else(ht,2*n_core,n_core)
 
   ## calculate the number of jobs run on each hyperthread
-  numJobsOnCpu<-rep(0,n_cpu)
-  numJobsOnCpu[1:n_cpu<=(n_jobs%%n_cpu)]<-1
-  numJobsOnCpu<-numJobsOnCpu+rep(n_jobs %/% n_cpu)
-  numJobsOnCpu <- numJobsOnCpu[numJobsOnCpu>0]
+  numJobsOnCpu <- jobsPerProcessor(n_jobs = n_jobs,n_cpu = n_cpu)
 
   ## calculate the start/end index for each hyperthread
   startingIndexOnCpu <- f0+cumsum(numJobsOnCpu)-numJobsOnCpu
@@ -215,12 +233,12 @@ write_stage2_5_swarmfile <- function(script_dir,output_dir,arguments_path,f0,f1,
   message("created files:\n\t", rscript, "\n\t", swarmfile)
   message("\nIssue the following command:")
   if (ht) {
-    message("swarm -f ", swarmfile, " -g 16 --merge-output --logdir=",
+    message("swarm -f ", swarmfile, " -p 2 -g 16 --merge-output --logdir=",
             script_dir, " --module R  --job-name ", job_name,
             "  --time ", time_estimate, " --gres=lscratch:500")
   }
   else {
-    message("swarm -f ", swarmfile, " -p 2 -g 16 --merge-output --logdir=",
+    message("swarm -f ", swarmfile, " -g 16 --merge-output --logdir=",
             script_dir, " --module R  --job-name ", job_name,
             "  --time ", time_estimate, " --gres=lscratch:500")
   }
@@ -243,14 +261,14 @@ write_stage2_5_swarmfile <- function(script_dir,output_dir,arguments_path,f0,f1,
 #' @seealso [write_stage1_swarmfile]
 #' @return the name of the script file (invisibly)
 #'
-write_stage1_R_script <- function(scriptDir=tools::R_user_dir("biowR")){
+write_stage1_R_script <- function(scriptDir=tools::R_user_dir("biowR","cache")){
   if (!dir.exists(scriptDir)){
     dir.create(scriptDir,recursive = TRUE)
   }
   rscript=file.path(scriptDir,'run_ggir_stage_1.R')
   if (!file.exists(rscript)){
     writeLines(
-'
+      '
 #!/usr/bin/env Rscript
 library("argparse")
 library("biowR")
@@ -285,7 +303,7 @@ invisible(rscript)
 #' @rdname write_swarmfile
 #' @export
 #'
-write_stage2_5_R_script <- function(scriptDir=tools::R_user_dir("biowR")){
+write_stage2_5_R_script <- function(scriptDir=tools::R_user_dir("biowR","cache")){
   if (!dir.exists(scriptDir)){
     dir.create(scriptDir,recursive = TRUE)
   }
