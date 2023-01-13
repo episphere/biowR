@@ -167,7 +167,7 @@ write_stage1_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache")
                                    json_args="",f0,f1,n_core,ht=FALSE){
   print(script_dir)
   rscript <- write_stage1_R_script(script_dir)
-  swarmfile <- file.path(script_dir,paste0("ggir_p_",f0,"_",f1,"_",n_core,".swarm"))
+  swarmfile <- file.path(script_dir,paste0("ggir_p1_",f0,"_",f1,"_",n_core,".swarm"))
 
   indices <- getStartAndEndJobs(f0,f1,n_core,ht)
 
