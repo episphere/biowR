@@ -20,7 +20,7 @@ write_stage1_swarmfile(
 )
 
 write_stage2_5_swarmfile(
-  script_dir,
+  script_dir = tools::R_user_dir("biowR", "cache"),
   output_dir,
   json_args,
   f0,

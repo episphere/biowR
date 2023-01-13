@@ -138,6 +138,15 @@ getStartAndEndJobs <- function(f0,f1,n_core,ht){
   return(list(start=startingIndexOnCpu,last=lastIndexOnCpu,num_jobs=numJobsOnCpu))
 }
 
+#' Ensure that the Path passed in is an absolute path
+#'
+#' @param path_in a possibly relative path
+#'
+#' @return an absolute path
+ensure_absolute_path <- function(path_in){
+  fs::path_expand(dplyr::if_else(fs::is_absolute_path(path_in), fs::path(path_in),fs::path_wd(path_in)))
+}
+
 #' Prepares the swarmfile/script file for Stage 1 of the GGIR analysis
 #'
 #' Pay close attention to the parameters passed in. Currently, the code assumes that
@@ -165,7 +174,13 @@ getStartAndEndJobs <- function(f0,f1,n_core,ht){
 #'
 write_stage1_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache"),cwa_root,results_root,
                                    json_args="",f0,f1,n_core,ht=FALSE){
-  print(script_dir)
+
+  ## guarantee that the argument are absolute paths...
+  script_dir <- ensure_absolute_path(script_dir)
+  cwa_root <- ensure_absolute_path(cwa_root)
+  results_root <- ensure_absolute_path(results_root)
+  json_args <- ensure_absolute_path(json_args)
+
   rscript <- write_stage1_R_script(script_dir)
   swarmfile <- file.path(script_dir,paste0("ggir_p1_",f0,"_",f1,"_",n_core,".swarm"))
 
@@ -193,7 +208,12 @@ write_stage1_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache")
 
 #' @export
 #' @rdname write_swarmfile
-write_stage2_5_swarmfile <- function(script_dir,output_dir,json_args,f0,f1,n_core,ht=FALSE){
+write_stage2_5_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache"),output_dir,json_args,f0,f1,n_core,ht=FALSE){
+
+  ## guarantee that the argument are absolute paths...
+  script_dir <- ensure_absolute_path(script_dir)
+  output_dir <- ensure_absolute_path(output_dir)
+  json_args <- ensure_absolute_path(json_args)
 
   # output_dir must exist and have a meta/basic directory...
   if (!fs::dir_exists(fs::path(output_dir,"meta","basic")) ) stop("the output_dir does not contain a meta/basic directory")
@@ -205,14 +225,14 @@ write_stage2_5_swarmfile <- function(script_dir,output_dir,json_args,f0,f1,n_cor
   ## make sure the arguments are absolute paths...
   if (!fs::is_absolute_path(script_dir))     script_dir <- fs::path_home(script_dir)
   if (!fs::is_absolute_path(output_dir))     output_dir <- fs::path_home(output_dir)
-  if (!fs::is_absolute_path(json_args)) arguments_path <- fs::path_wd(json_args)
+  if (!fs::is_absolute_path(json_args))      json_args <- fs::path_wd(json_args)
 
   ## calculate the number of jobs, first/last index on each hyperthread
   indices <- getStartAndEndJobs(f0,f1,n_core,ht)
 
   ## write the swarm file (note: n_core may no longer be correct)..
   swarmfile <- file.path(script_dir,paste0("ggir_p25_",f0,"_",f1,"_",length(indices$start),".swarm"))
-  cat(paste0("Rscript ",rscript," ",output_dir," ",arguments_path," ",indices$start," ",indices$last),
+  cat(paste0("Rscript ",rscript," ",output_dir," ",json_args," ",indices$start," ",indices$last),
       sep="\n",
       file = swarmfile)
 
