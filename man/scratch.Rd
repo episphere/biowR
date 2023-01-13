@@ -30,4 +30,10 @@ cannot guarantee that all the processes will have the same local scratch space.
 I removed the clear_scratch_space function.  You cannot delete the /tmp or /lscratch/JOB_ID files.
 It may do more harm than good.  Clean the space yourself.  Maybe work in a directory under the
 scratch directory.
+
+I use to worry about setting the scratch dir to a directory in /lscratch/JOB_ID/PROC_ID. I would
+add the swarm array task id to the directory name.
+since every instance of R has a unique tempdir, I dont need to work about this.
+for simplicity just use the tempdir and scratch.  The new scratch directory is
+/lscratch/JOB_ID/RtmpXXXX/scratch.  Each instance is unique.
 }
