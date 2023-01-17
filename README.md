@@ -46,3 +46,27 @@ The arguments are the same when you run stages 2->5 with the only exception of t
        is currently set to "accelerometer"
        write_stage2_5_swarmfile(output_dir=output_dir,json_args=json_args, 
                                 f0=1, f2=10,n_core=5,ht=TRUE)
+
+### JSON formatted parameters
+
+Parameters passed into GGIR can be passed in via JSON for example:
+
+```
+   {
+      "## JSON Note": " Any key starting with # will be removed like a comment",
+      "strategy":1,
+      "do.report":[2,4,5],
+      "maxdur":9,
+    
+      "#PART_2_PARAMETER":null,
+      "desiredtsz": "Europe/London",
+
+      "###PART_5_PARAMETERS":null,
+      "save_ms5rawlevels":true,
+      "save_ms5raw_format":"csv"
+  }
+```
+These parameters are an example may not be useful.  If the parameter is not set, the default is used.
+See the [GGIR manual](https://cran.r-project.org/web/packages/GGIR/GGIR.pdf) or the 
+[GGIR parameter vignette](https://cran.r-project.org/web/packages/GGIR/vignettes/GGIRParameters.html) for more information on parameters.
+
