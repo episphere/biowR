@@ -190,8 +190,9 @@ write_stage1_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache")
       sep="\n",
       file = swarmfile)
 
-  ## assume it takes 90 mins/job
-  est=lubridate::as.period(lubridate::minutes(90*max(indices$num_jobs)),unit = "days")
+  ## assume it takes 120 mins/job
+  est_time_per_job=120
+  est=lubridate::as.period(lubridate::minutes(est_time_per_job*max(indices$num_jobs)),unit = "days")
   time_estimate=sprintf('%02d-%02d:%02d:%02d', lubridate::day(est), lubridate::hour(est),
                         lubridate::minute(est), lubridate::second(est))
   job_name=paste0("ggir_p1_swarm_",f0,"_",f1,"_",length(indices$num_jobs))
@@ -238,7 +239,9 @@ write_stage2_5_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache
 
 
   ## estimate time to run
-  est <- lubridate::as.period(lubridate::minutes(90 * max(indices$num_jobs)),
+  ## assume it takes 120 mins/job
+  est_time_per_job=120
+  est <- lubridate::as.period(lubridate::minutes(est_time_per_job * max(indices$num_jobs)),
                               unit = "days")
   time_estimate <- sprintf("%02d-%02d:%02d:%02d", lubridate::day(est),
                            lubridate::hour(est), lubridate::minute(est), lubridate::second(est))
