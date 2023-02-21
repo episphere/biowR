@@ -59,7 +59,7 @@ Parameters passed into GGIR can be passed in via JSON for example:
       "maxdur":9,
     
       "#PART_2_PARAMETER":null,
-      "desiredtsz": "Europe/London",
+      "desiredtz": "Europe/London",
 
       "###PART_5_PARAMETERS":null,
       "save_ms5rawlevels":true,
