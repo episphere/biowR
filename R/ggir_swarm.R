@@ -150,7 +150,7 @@ ensure_absolute_path <- function(path_in){
 #' Prepares the swarmfile/script file for Stage 1 of the GGIR analysis
 #'
 #' Pay close attention to the parameters passed in. Currently, the code assumes that
-#' each job takes 90 minutes to run.  This is to ensure that enough time is allocate to
+#' each job takes 120 minutes to run.  This is to ensure that enough time is allocate to
 #' run the job.
 #'
 #' Because CRAN policy does not allow the scripts to be placed in the user's home directory without
@@ -166,6 +166,8 @@ ensure_absolute_path <- function(path_in){
 #' @param n_core The number of jobs you would like to swarm at once.
 #' @param ht If you want to use hyper threading, set ht to TRUE.
 #' @param output_dir The output_&lt;study$gt; directory in the result_root
+#' @param indices A vector of file indices to (re)analyze
+#' @param files The files names to (re)analyze.
 #' directory from stage 1
 #'
 #' @return invisibly returns the name of the swarmfile
@@ -262,6 +264,51 @@ write_stage2_5_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache
   invisible(swarmfile)
 }
 
+#' @export
+#' @rdname write_swarmfile
+rewrite_stage1_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache"),cwa_root,results_root,
+                                     json_args="",indices,files,ht=FALSE){
+
+  ## you have to give either indices or filenames
+  if ( length(files[!is.na(files)]) + length(files[!is.na(indices)]) == 0 ) return()
+  if ( !fs::file_exists(json_args)) stop("json_args does not exist")
+
+  script_dir <- ensure_absolute_path(script_dir)
+  results_root <- ensure_absolute_path(results_root)
+  json_args <- ensure_absolute_path(json_args)
+  rscript <- write_stage1_R_script(script_dir)
+  swarmfile <- file.path(script_dir,paste0("ggir_p1_",format(Sys.time(),"%Y%m%d_%H%M%OS3"),".swarm"))
+
+  ## get a list of files...
+  all_cwa <- fs::dir_ls(path=cwa_root,glob = "*.cwa")
+
+  indices = as.integer(indices)
+  indices = indices[!is.na(indices) & indices<=length(all_cwa) & indices > 0]
+  from_indices <- all_cwa[indices]
+
+  from_files <- fs::path(cwa_root,files)
+  from_files <- intersect(all_cwa,from_files)
+
+  indices_to_run <- sort( match(union(from_files,from_indices),all_cwa ) )
+
+  cat(paste0("Rscript ",rscript," ",cwa_root," ",results_root," ",indices_to_run," ",indices_to_run, " -json ",json_args),
+      sep="\n",
+      file = swarmfile)
+
+  ## assume it takes 120 mins/job
+  time_estimate="2:00:00"
+  job_name=paste0("ggir_p1_reswarm_",format(Sys.time(),"%Y%m%d_%H%M%OS3"))
+  message("created files:\n\t ",rscript,"\n\t",swarmfile)
+  message("Issue the following command:")
+  if(ht){
+    message('swarm -f ',swarmfile,' -p 2 -g 16 --merge-output --logdir=',script_dir,' --module R  --job-name ',job_name,'  --time ',time_estimate,' --gres=lscratch:500')
+  } else{
+    message('swarm -f ',swarmfile,' -g 16 --merge-output --logdir=',script_dir,' --module R  --job-name ',job_name,'  --time ',time_estimate,' --gres=lscratch:500')
+  }
+
+  invisible(swarmfile)
+}
+
 
 
 
@@ -270,9 +317,9 @@ write_stage2_5_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache
 #' @name write_R_script
 #'
 #' @description
-#' This is called from write_stage1_swarmfile or write_stage2_5_swarmfile
+#' write_stage1_R_script and write_stage2_5_R_script are called from
+#' write_stage1_swarmfile or write_stage2_5_swarmfile respectively.
 #'
-#' @rdname write_swarmfile
 #' @param script_dir the directory where the R script is written
 #' @seealso [write_stage1_swarmfile]
 #' @return the name of the script file (invisibly)
@@ -316,7 +363,7 @@ invisible(rscript)
 
 
 
-#' @rdname write_swarmfile
+#' @rdname write_R_script
 #' @export
 #'
 write_stage2_5_R_script <- function(script_dir=tools::R_user_dir("biowR","cache")){

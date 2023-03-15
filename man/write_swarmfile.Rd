@@ -3,9 +3,7 @@
 \name{write_stage1_swarmfile}
 \alias{write_stage1_swarmfile}
 \alias{write_stage2_5_swarmfile}
-\alias{write_R_script}
-\alias{write_stage1_R_script}
-\alias{write_stage2_5_R_script}
+\alias{rewrite_stage1_swarmfile}
 \title{Prepares the swarmfile/script file for Stage 1 of the GGIR analysis}
 \usage{
 write_stage1_swarmfile(
@@ -29,12 +27,18 @@ write_stage2_5_swarmfile(
   ht = FALSE
 )
 
-write_stage1_R_script(script_dir = tools::R_user_dir("biowR", "cache"))
-
-write_stage2_5_R_script(script_dir = tools::R_user_dir("biowR", "cache"))
+rewrite_stage1_swarmfile(
+  script_dir = tools::R_user_dir("biowR", "cache"),
+  cwa_root,
+  results_root,
+  json_args = "",
+  indices,
+  files,
+  ht = FALSE
+)
 }
 \arguments{
-\item{script_dir}{the directory where the R script is written}
+\item{script_dir}{The directory where the scripts are written.}
 
 \item{cwa_root}{The directory where the accelerometer files are stored.}
 
@@ -50,26 +54,23 @@ write_stage2_5_R_script(script_dir = tools::R_user_dir("biowR", "cache"))
 
 \item{ht}{If you want to use hyper threading, set ht to TRUE.}
 
-\item{output_dir}{The output_<study$gt; directory in the result_root
+\item{output_dir}{The output_<study$gt; directory in the result_root}
+
+\item{indices}{A vector of file indices to (re)analyze}
+
+\item{files}{The files names to (re)analyze.
 directory from stage 1}
 }
 \value{
 invisibly returns the name of the swarmfile
-
-the name of the script file (invisibly)
 }
 \description{
 Pay close attention to the parameters passed in. Currently, the code assumes that
-each job takes 90 minutes to run.  This is to ensure that enough time is allocate to
+each job takes 120 minutes to run.  This is to ensure that enough time is allocate to
 run the job.
-
-This is called from write_stage1_swarmfile or write_stage2_5_swarmfile
 }
 \details{
 Because CRAN policy does not allow the scripts to be placed in the user's home directory without
 permission, the default location of the scripts is in tools::R_user_dir("biowR","cache"), which on biowulf
 is ~/.cache/R/biowR.  I would suggest setting the script_dir argument to something useful.
-}
-\seealso{
-\link{write_stage1_swarmfile}
 }
