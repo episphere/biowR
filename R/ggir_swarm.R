@@ -138,6 +138,7 @@ getStartAndEndJobs <- function(f0,f1,n_core,ht){
   return(list(start=startingIndexOnCpu,last=lastIndexOnCpu,num_jobs=numJobsOnCpu))
 }
 
+
 #' Ensure that the Path passed in is an absolute path
 #'
 #' @param path_in a possibly relative path
@@ -309,6 +310,59 @@ rewrite_stage1_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache
   invisible(swarmfile)
 }
 
+#' @export
+#' @rdname write_swarmfile
+rewrite_stage2_5_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache"),output_dir,json_args,indices,ht=FALSE){
+
+  ## make sure the arguments are absolute paths...
+  if (!fs::is_absolute_path(script_dir))     script_dir <- fs::path_home(script_dir)
+  if (!fs::is_absolute_path(output_dir))     output_dir <- fs::path_home(output_dir)
+  if (!fs::is_absolute_path(json_args))      json_args <- fs::path_wd(json_args)
+
+  # output_dir must exist and have a meta/basic directory...
+  if (!fs::dir_exists(fs::path(output_dir,"meta","basic")) ) stop("the output_dir does not contain a meta/basic directory")
+  if ( length(fs::dir_ls(fs::path(output_dir,"meta","basic"))) == 0 ) stop("No part 1 results in the output_dir/meta/basic directory")
+
+  # write the r script that the swarm will run
+  rscript <- write_stage2_5_R_script(script_dir)
+
+  ## get a list of part 1 results..
+  all_rdata <- fs::dir_ls(fs::path(output_dir,"meta","basic"),glob = "*.RData")
+
+  indices = as.integer(indices)
+  indices = indices[!is.na(indices) & indices<=length(all_rdata) & indices > 0]
+  from_indices <- all_rdata[indices]
+
+
+  job_name <- paste0( "reswarm_p25_",format(Sys.time(),"%Y%m%d_%H%M%OS3") )
+    ## write the swarm file (note: n_core may no longer be correct)..
+  swarmfile <- file.path(script_dir,paste0(job_name,".swarm"))
+  cat(paste0("Rscript ",rscript," ",output_dir," ",json_args," ",indices," ",indices,sep="\n"), file = swarmfile)
+
+
+  ## estimate time to run
+  ## assume it takes 120 mins/job
+  est_time_per_job=120
+  est <- lubridate::as.period(lubridate::minutes(est_time_per_job * length(indices) ),
+                              unit = "days")
+  time_estimate <- sprintf("%02d-%02d:%02d:%02d", lubridate::day(est),
+                           lubridate::hour(est), lubridate::minute(est), lubridate::second(est))
+
+  message("created files:\n\t", rscript, "\n\t", swarmfile)
+  message("\nIssue the following command:")
+  if (ht) {
+    message("swarm -f ", swarmfile, " -p 2 -g 16 --merge-output --logdir=",
+            script_dir, " --module R  --job-name ", job_name,
+            "  --time ", time_estimate, " --gres=lscratch:500")
+  }
+  else {
+    message("swarm -f ", swarmfile, " -g 16 --merge-output --logdir=",
+            script_dir, " --module R  --job-name ", job_name,
+            "  --time ", time_estimate, " --gres=lscratch:500")
+  }
+
+  invisible(swarmfile)
+}
 
 
 

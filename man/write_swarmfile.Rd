@@ -4,6 +4,7 @@
 \alias{write_stage1_swarmfile}
 \alias{write_stage2_5_swarmfile}
 \alias{rewrite_stage1_swarmfile}
+\alias{rewrite_stage2_5_swarmfile}
 \title{Prepares the swarmfile/script file for Stage 1 of the GGIR analysis}
 \usage{
 write_stage1_swarmfile(
@@ -34,6 +35,14 @@ rewrite_stage1_swarmfile(
   json_args = "",
   indices,
   files,
+  ht = FALSE
+)
+
+rewrite_stage2_5_swarmfile(
+  script_dir = tools::R_user_dir("biowR", "cache"),
+  output_dir,
+  json_args,
+  indices,
   ht = FALSE
 )
 }

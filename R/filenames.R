@@ -20,13 +20,15 @@
 #' # check that the demangle files are the same as the original files.
 #' all(demangled == files)
 mangle_filename <- function(x){
-  sub("(\\.[^\\.]*)$",paste0("_",format(Sys.time(),"%Y%m%d%H%M%OS4"),"\\1"),x)
+  ##sub("(\\.[^\\.]*)$",paste0("_",format(Sys.time(),"%Y%m%d%H%M%OS4"),"\\1"),x)
+  sub("(\\.[^\\.]*)$",paste0("_",uuid::UUIDgenerate(),"\\1"),x)
 }
 
 #' @rdname mangle_filename
 #' @export
 demangle_filename <- function(x){
-  sub("_[0-9\\.]+(\\.[^\\.]*$)","\\1",x)
+  #sub("_[0-9\\.]+(\\.[^\\.]*$)","\\1",x)
+  sub("_[a-f0-9\\-]+(\\.[^\\.]*$)","\\1",x)
 }
 
 #'
