@@ -268,7 +268,7 @@ write_stage2_5_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache
 #' @export
 #' @rdname write_swarmfile
 rewrite_stage1_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache"),cwa_root,results_root,
-                                     json_args="",indices,files,ht=FALSE){
+                                     json_args="",indices=c(),files=c(),ht=FALSE){
 
   cwa_files <- dir(path=cwa_root,full.names = T)
 
@@ -283,7 +283,8 @@ rewrite_stage1_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache
   swarmfile <- file.path(script_dir,paste0("ggir_p1_",format(Sys.time(),"%Y%m%d_%H%M%OS3"),".swarm"))
 
   ## get a list of files...
-  all_cwa <- fs::dir_ls(path=cwa_root,glob = "*.cwa")
+  ## some files can be .csv.gz...  the user needs to be careful...
+  all_cwa <- fs::dir_ls(path=cwa_root,regexp = ".*\\.cwa$|.*\\.csv\\.gz$")
 
   indices = as.integer(indices)
   indices = indices[!is.na(indices) & indices<=length(all_cwa) & indices > 0]
