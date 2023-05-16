@@ -270,8 +270,10 @@ write_stage2_5_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache
 rewrite_stage1_swarmfile <- function(script_dir=tools::R_user_dir("biowR","cache"),cwa_root,results_root,
                                      json_args="",indices,files,ht=FALSE){
 
+  cwa_files <- dir(path=cwa_root,full.names = T)
+
   ## you have to give either indices or filenames
-  if ( length(files[!is.na(files)]) + length(files[!is.na(indices)]) == 0 ) return()
+  if ( length(files[!is.na(files)]) + length(cwa_files[!is.na(indices)]) == 0 ) return()
   if ( !fs::file_exists(json_args)) stop("json_args does not exist")
 
   script_dir <- ensure_absolute_path(script_dir)
