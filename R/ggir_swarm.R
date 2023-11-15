@@ -37,6 +37,7 @@ run_stage_one<-function(cwa_root,results_root,json_args,f0,f1){
   stage_root <- get_scratch_dir()
   stage_cwa <- file.path(stage_root,"accelerometer")
   stage_out <- file.path(stage_root,"out")
+  stage_meta <- file.path(stage_out,"output_accelerometer","meta")
 
 
   if( getOption("test1_verbose",FALSE) ){
@@ -45,6 +46,7 @@ run_stage_one<-function(cwa_root,results_root,json_args,f0,f1){
     message("stage_root: ",stage_root)
     message("stage_cwa: ",stage_cwa)
     message("stage_out: ",stage_out)
+    message("stage_meta: ",stage_meta)
   }
   if (!dir.exists(stage_cwa)){
     dir.create(stage_cwa)
@@ -52,6 +54,10 @@ run_stage_one<-function(cwa_root,results_root,json_args,f0,f1){
   if (!dir.exists(stage_out)) {
     dir.create(stage_out)
   }
+  if (!dir.exists(stage_meta)) {
+    dir.create(stage_meta,recursive = T)
+  }
+
   stage_files(fromDir = cwa_root, toDir = stage_cwa,f0=f0, f1=f1)
   if( getOption("test1_verbose",FALSE) ){
     message(" ====> Finished staging data at: ",Sys.time())
