@@ -39,7 +39,7 @@ run_stage_one<-function(cwa_root,results_root,json_args,f0,f1){
   stage_out <- file.path(stage_root,"out")
 
   stage_meta <- file.path(stage_out,"output_accelerometer")
-  stage_basic <- file.path(stage_meta,"output_accelerometer","meta","basic")
+  stage_basic <- file.path(stage_out,"output_accelerometer","meta","basic")
 
 
   if( getOption("test1_verbose",FALSE) ){
