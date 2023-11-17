@@ -37,7 +37,9 @@ run_stage_one<-function(cwa_root,results_root,json_args,f0,f1){
   stage_root <- get_scratch_dir()
   stage_cwa <- file.path(stage_root,"accelerometer")
   stage_out <- file.path(stage_root,"out")
-  stage_meta <- file.path(stage_out,"output_accelerometer","meta")
+
+  stage_meta <- file.path(stage_out,"output_accelerometer")
+  stage_basic <- file.path(stage_meta,"output_accelerometer","meta","basic")
 
 
   if( getOption("test1_verbose",FALSE) ){
@@ -51,10 +53,7 @@ run_stage_one<-function(cwa_root,results_root,json_args,f0,f1){
   if (!dir.exists(stage_cwa)){
     dir.create(stage_cwa)
   }
-  if (!dir.exists(stage_out)) {
-    dir.create(stage_out)
-  }
-  if (!dir.exists(stage_meta)) {
+  if (!dir.exists(stage_basic)) {
     dir.create(stage_meta,recursive = T)
   }
 
