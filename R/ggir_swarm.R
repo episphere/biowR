@@ -54,7 +54,7 @@ run_stage_one<-function(cwa_root,results_root,json_args,f0,f1){
     dir.create(stage_cwa)
   }
   if (!dir.exists(stage_basic)) {
-    dir.create(stage_meta,recursive = T)
+    dir.create(stage_basic,recursive = T)
   }
 
   stage_files(fromDir = cwa_root, toDir = stage_cwa,f0=f0, f1=f1)
