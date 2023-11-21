@@ -1,6 +1,6 @@
 Package: biowR
 Title: Helper functions for Biowulf Cluster
-Version: 0.0.13
+Version: 0.0.14
 Authors@R: 
     c(person(given = "Daniel",
              family = "Russ",

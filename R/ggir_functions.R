@@ -69,6 +69,7 @@ run_stages_2_5 <- function(part1_output_dir,json_args="",f0,f1){
   args$mode=2:5
   args$outputdir=dirname(stage_output_dir)
   args$studyname = gsub("output_","",basename(part1_output_dir))
+  args$datadir = file.path(dirname(stage_output_dir),"accelerometer")
   message("FORCING do.part2.pdf,do.part3.pdf,do.visual to FALSE")
   args$do.part2.pdf = FALSE
   args$do.part3.pdf = FALSE
